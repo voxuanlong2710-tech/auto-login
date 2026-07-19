@@ -1,0 +1,46 @@
+name: 2Pink Update Keys
+
+on:
+  workflow_dispatch:
+    inputs:
+      account:
+        description: 'Số tài khoản (1, 2)'
+        required: true
+        default: '1'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Select credentials
+        run: |
+          ACCOUNT="${{ inputs.account }}"
+          if [ "$ACCOUNT" = "1" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_1 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_1 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "2" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_2 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_2 }}" >> $GITHUB_ENV
+          fi
+          echo "ACCOUNT=$ACCOUNT" >> $GITHUB_ENV
+
+      - name: Run script
+        env:
+          USERNAME_2PINK: ${{ env.USERNAME_2PINK }}
+          PASSWORD_2PINK: ${{ env.PASSWORD_2PINK }}
+          ACCOUNT: ${{ env.ACCOUNT }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python update_keys.py
