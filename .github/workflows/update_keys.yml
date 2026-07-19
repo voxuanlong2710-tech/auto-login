@@ -1,10 +1,10 @@
-name: 2Pink Update Keys
+name: 2Pink Update Keys (Single)
 
 on:
   workflow_dispatch:
     inputs:
       account:
-        description: 'Số tài khoản (1, 2)'
+        description: 'Số tài khoản (1-20)'
         required: true
         default: '1'
 
@@ -13,29 +13,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
       - name: Install Playwright
         run: |
           pip install playwright
           playwright install chromium --with-deps
-
       - name: Select credentials
         run: |
           ACCOUNT="${{ inputs.account }}"
-          if [ "$ACCOUNT" = "1" ]; then
-            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_1 }}" >> $GITHUB_ENV
-            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_1 }}" >> $GITHUB_ENV
-          elif [ "$ACCOUNT" = "2" ]; then
-            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_2 }}" >> $GITHUB_ENV
-            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_2 }}" >> $GITHUB_ENV
+          if [ "$ACCOUNT" = "1" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_1 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_1 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "2" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_2 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_2 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "3" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_3 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_3 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "4" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_4 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_4 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "5" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_5 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_5 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "6" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_6 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_6 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "7" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_7 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_7 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "8" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_8 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_8 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "9" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_9 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_9 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "10" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_10 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_10 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "11" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_11 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_11 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "12" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_12 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_12 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "13" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_13 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_13 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "14" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_14 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_14 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "15" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_15 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_15 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "16" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_16 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_16 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "17" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_17 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_17 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "18" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_18 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_18 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "19" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_19 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_19 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "20" ]; then echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_20 }}" >> $GITHUB_ENV && echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_20 }}" >> $GITHUB_ENV
           fi
           echo "ACCOUNT=$ACCOUNT" >> $GITHUB_ENV
-
       - name: Run script
         env:
           USERNAME_2PINK: ${{ env.USERNAME_2PINK }}
