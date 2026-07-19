@@ -11,8 +11,7 @@ from playwright.async_api import async_playwright
 
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTlV3fKG5HQjME5OYZ--vk7TMwaSkd_OZZMN4aMvEtLNx_wx7jCFhfu-L9eD74rXage674hucpO7dfR/pub?gid=0&single=true&output=csv"
 
-LOGIN_URL     = "https://2pink.org/"
-DASHBOARD_URL = "https://2pink.org/dashboard/live-traffic"
+LOGIN_URL = "https://2pink.org/"
 
 USERNAME  = os.environ["USERNAME_2PINK"]
 PASSWORD  = os.environ["PASSWORD_2PINK"]
@@ -21,10 +20,27 @@ ACCOUNT   = os.environ.get("ACCOUNT", "?")
 GMAIL_USER = os.environ.get("GMAIL_USER", "")
 GMAIL_PASS = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-# Dải STT cho từng tài khoản
-ACCOUNT_RANGES = {
-    "1": (1, 5),
-    "2": (6, 10),
+ACCOUNT_CONFIG = {
+    "1":  (1,   5,  "https://2pink.org/dashboard/live-traffic/ivivucom-262112"),
+    "2":  (6,   10, "https://2pink.org/dashboard/live-traffic/wwwivivucom-263440"),
+    "3":  (11,  15, "https://2pink.org/dashboard/live-traffic/wwwivivucom-269699"),
+    "4":  (16,  20, "https://2pink.org/dashboard/live-traffic/wwwivivucom-269704"),
+    "5":  (21,  25, "https://2pink.org/dashboard/live-traffic/wwwivivucom-269705"),
+    "6":  (26,  30, "https://2pink.org/dashboard/live-traffic/wwwivivucom-269707"),
+    "7":  (31,  35, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270385"),
+    "8":  (36,  40, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270386"),
+    "9":  (41,  45, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270767"),
+    "10": (46,  50, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270768"),
+    "11": (51,  55, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270766"),
+    "12": (56,  60, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270769"),
+    "13": (61,  65, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270955"),
+    "14": (66,  70, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270956"),
+    "15": (71,  75, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270958"),
+    "16": (76,  80, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270959"),
+    "17": (81,  85, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270960"),
+    "18": (86,  90, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270962"),
+    "19": (91,  95, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270964"),
+    "20": (96, 100, "https://2pink.org/dashboard/live-traffic/wwwivivucom-270965"),
 }
 
 MAX_RETRIES = 3
@@ -37,10 +53,8 @@ def log(msg):
     logs.append(entry)
 
 def fetch_keywords(stt_from, stt_to):
-    """Đọc keywords từ Google Sheet theo dải STT"""
     with urllib.request.urlopen(SHEET_CSV_URL) as response:
         content = response.read().decode("utf-8")
-    
     reader = csv.DictReader(content.splitlines())
     keywords = []
     for row in reader:
@@ -54,16 +68,15 @@ def fetch_keywords(stt_from, stt_to):
                 })
         except:
             continue
-    
     keywords.sort(key=lambda x: x["stt"])
     return keywords
 
-def send_email(success: bool, keywords: list):
+def send_email(success: bool, keywords: list, account: str):
     if not GMAIL_USER or not GMAIL_PASS:
         return
 
     status = "✅ Thành công" if success else "❌ Thất bại"
-    subject = f"Account {ACCOUNT} Cập nhật Key - {status}"
+    subject = f"Account {account} Cập nhật Key - {status}"
 
     rows = ""
     for kw in keywords:
@@ -72,7 +85,7 @@ def send_email(success: bool, keywords: list):
     body = f"""
 <h2>Báo cáo cập nhật keyword</h2>
 <table border="1" cellpadding="6" cellspacing="0">
-  <tr><td><b>Tài khoản</b></td><td>Account {ACCOUNT}</td></tr>
+  <tr><td><b>Tài khoản</b></td><td>Account {account}</td></tr>
   <tr><td><b>Trạng thái</b></td><td>{status}</td></tr>
   <tr><td><b>Thời gian</b></td><td>{datetime.now().strftime("%d/%m/%Y %H:%M:%S")}</td></tr>
 </table>
@@ -99,58 +112,46 @@ def send_email(success: bool, keywords: list):
     except Exception as e:
         print(f"⚠️ Lỗi gửi email: {e}")
 
-async def update_keywords(page, keywords):
-    """Cập nhật lần lượt từng keyword trên 2pink"""
-    
-    # Lấy danh sách URL rows trong bảng
-    url_rows = page.locator("#ctl00_ContentPlaceHolder1_ListView1 tr.item, #ctl00_ContentPlaceHolder1_ListView1 tr.altitem")
-    count = await url_rows.count()
-    log(f"📋 Tìm thấy {count} URL rows trên 2pink")
+async def update_one(page, dashboard_url, row_index, kw):
+    log(f"🔄 [{row_index+1}/5] STT {kw['stt']}: {kw['key']}")
 
-    for i, kw in enumerate(keywords):
-        if i >= count:
-            log(f"⚠️ Không đủ rows cho STT {kw['stt']}, bỏ qua")
-            continue
+    # Reload dashboard trước mỗi lần để đảm bảo danh sách fresh
+    await page.goto(dashboard_url)
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(2000)
 
-        log(f"🔄 Cập nhật STT {kw['stt']}: {kw['key']}")
+    # Click vào link theo index
+    links = page.locator("a[id*='ListView1'][id*='LinkButton1']")
+    count = await links.count()
+    log(f"🔍 Tìm thấy {count} links, click index {row_index}")
+    await links.nth(row_index).click()
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(2000)
 
-        # Click vào URL row để mở form sửa
-        row = url_rows.nth(i)
-        link_btn = row.locator("a, [id*='LinkButton']").first
-        await link_btn.click()
-        await page.wait_for_timeout(2000)
+    # Điền keyword
+    await page.fill("#ctl00_ContentPlaceHolder1_txtKeyWord", kw["key"])
+    await page.wait_for_timeout(300)
+    log(f"✏️ Keyword: {kw['key']}")
 
-        # Double click vào ô keyword (Google.com input)
-        keyword_input = page.locator("input[id*='txtUrl'], input[type='text']").nth(1)
-        await keyword_input.dblclick()
-        await page.wait_for_timeout(500)
-        await keyword_input.fill(kw["key"])
-        await page.wait_for_timeout(500)
+    # Điền URL
+    await page.fill("#ctl00_ContentPlaceHolder1_txtStep1", kw["url"])
+    await page.wait_for_timeout(300)
+    log(f"🔗 URL: {kw['url']}")
 
-        # Double click vào ô URL (Click vào link)
-        url_input = page.locator("input[id*='txtLink'], a[id*='lnkUrl'], input[type='text']").nth(2)
-        await url_input.dblclick()
-        await page.wait_for_timeout(500)
-        await url_input.fill(kw["url"])
-        await page.wait_for_timeout(500)
+    # Thời gian chờ random 25-115 giây
+    rand_time = random.randint(25, 45)
+    await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time))
+    await page.wait_for_timeout(300)
+    log(f"⏱️ Thời gian chờ: {rand_time}s")
 
-        # Thay đổi thời gian chờ click ngẫu nhiên (25-115 giây)
-        time_inputs = page.locator("input[id*='txtTime'], input[type='text'][value]")
-        time_count = await time_inputs.count()
-        for t in range(time_count):
-            rand_time = random.randint(25, 115)
-            await time_inputs.nth(t).triple_click()
-            await time_inputs.nth(t).fill(str(rand_time))
-            await page.wait_for_timeout(300)
+    # Bấm Cập nhật Url
+    await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl")
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(2000)
 
-        # Bấm Cập nhật URL
-        await page.click("input[value='Cập nhật Url'], button:has-text('Cập nhật Url')")
-        await page.wait_for_load_state("networkidle")
-        await page.wait_for_timeout(2000)
+    log(f"✅ [{row_index+1}/5] Xong STT {kw['stt']}")
 
-        log(f"✅ Xong STT {kw['stt']}: {kw['key']}")
-
-async def attempt(p, keywords):
+async def attempt(p, keywords, dashboard_url):
     browser = await p.chromium.launch(headless=True)
     page = await browser.new_page()
 
@@ -168,11 +169,10 @@ async def attempt(p, keywords):
         await page.wait_for_timeout(2000)
         log("✅ Đã đăng nhập!")
 
-        await page.goto(DASHBOARD_URL)
-        await page.wait_for_load_state("networkidle")
-        await page.wait_for_timeout(2000)
+        # Cập nhật từng keyword — mỗi lần reload dashboard
+        for i, kw in enumerate(keywords):
+            await update_one(page, dashboard_url, i, kw)
 
-        await update_keywords(page, keywords)
         return True
 
     except Exception as e:
@@ -182,12 +182,11 @@ async def attempt(p, keywords):
         await browser.close()
 
 async def run():
-    # Xác định dải STT
-    if ACCOUNT not in ACCOUNT_RANGES:
+    if ACCOUNT not in ACCOUNT_CONFIG:
         log(f"❌ Account {ACCOUNT} chưa được cấu hình!")
         return
 
-    stt_from, stt_to = ACCOUNT_RANGES[ACCOUNT]
+    stt_from, stt_to, dashboard_url = ACCOUNT_CONFIG[ACCOUNT]
     log(f"📥 Đọc keywords STT {stt_from}-{stt_to} từ Google Sheet...")
     keywords = fetch_keywords(stt_from, stt_to)
     log(f"✅ Đọc được {len(keywords)} keywords")
@@ -199,7 +198,7 @@ async def run():
                 if i > 1:
                     log(f"🔄 Thử lại lần {i}/{MAX_RETRIES}...")
                     await asyncio.sleep(10)
-                success = await attempt(p, keywords)
+                success = await attempt(p, keywords, dashboard_url)
                 if success:
                     break
             except Exception as e:
@@ -207,6 +206,6 @@ async def run():
                 if i == MAX_RETRIES:
                     log("❌ Đã thử 3 lần, không thành công!")
 
-    send_email(success, keywords)
+    send_email(success, keywords, ACCOUNT)
 
 asyncio.run(run())
