@@ -78,7 +78,8 @@ def send_summary_email(results: list):
     rows = ""
     for r in results:
         status = "✅" if r["success"] else "❌"
-        rows += f"<tr><td>{r['account']}</td><td>{status}</td><td>{r['keywords']}</td></tr>"
+        failed = f" | ❌ Lỗi: {r['failed_keys']}" if r.get("failed_keys") else ""
+        rows += f"<tr><td>{r['account']}</td><td>{status}</td><td>{r['keywords']}{failed}</td></tr>"
 
     body = f"""
 <h2>Báo cáo Batch Cập nhật Keyword</h2>
@@ -111,26 +112,48 @@ def send_summary_email(results: list):
     except Exception as e:
         print(f"⚠️ Lỗi gửi email: {e}")
 
-async def update_one(page, row_index, kw):
-    links = page.locator("a[id*='ListView1'][id*='LinkButton1']")
-    await links.nth(row_index).click()
-    await page.wait_for_load_state("networkidle")
-    await page.wait_for_timeout(2000)
+async def update_one(page, dashboard_url, row_index, kw):
+    """Cập nhật 1 keyword với retry riêng, tiếp tục dù lỗi"""
+    for attempt in range(1, 3):  # Retry tối đa 2 lần mỗi keyword
+        try:
+            if attempt > 1:
+                log(f"    🔄 Retry keyword STT {kw['stt']} lần {attempt}...")
+                await asyncio.sleep(5)
 
-    await page.fill("#ctl00_ContentPlaceHolder1_txtKeyWord", kw["key"])
-    await page.wait_for_timeout(300)
-    await page.fill("#ctl00_ContentPlaceHolder1_txtStep1", kw["url"])
-    await page.wait_for_timeout(300)
+            # Reload dashboard — bỏ networkidle, dùng timeout cố định
+            await page.goto(dashboard_url, timeout=90000)
+            await page.wait_for_timeout(3000)
 
-    rand_time = random.randint(25, 115)
-    await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time))
-    await page.wait_for_timeout(300)
+            # Click link theo index
+            links = page.locator("a[id*='ListView1'][id*='LinkButton1']")
+            await links.nth(row_index).click(timeout=90000)
+            await page.wait_for_timeout(3000)
 
-    await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl")
-    await page.wait_for_load_state("networkidle")
-    await page.wait_for_timeout(2000)
+            # Điền keyword
+            await page.fill("#ctl00_ContentPlaceHolder1_txtKeyWord", kw["key"], timeout=30000)
+            await page.wait_for_timeout(300)
 
-    log(f"  ✅ STT {kw['stt']}: {kw['key']} | {rand_time}s")
+            # Điền URL
+            await page.fill("#ctl00_ContentPlaceHolder1_txtStep1", kw["url"], timeout=30000)
+            await page.wait_for_timeout(300)
+
+            # Thời gian chờ random 25-45 giây
+            rand_time = random.randint(25, 45)
+            await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time), timeout=30000)
+            await page.wait_for_timeout(300)
+
+            # Bấm Cập nhật
+            await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl", timeout=30000)
+            await page.wait_for_timeout(3000)
+
+            log(f"  ✅ STT {kw['stt']}: {kw['key']} | {rand_time}s")
+            return True
+
+        except Exception as e:
+            log(f"  ⚠️ STT {kw['stt']} lần {attempt} lỗi: {e}")
+
+    log(f"  ❌ STT {kw['stt']}: {kw['key']} - Bỏ qua sau 2 lần thất bại!")
+    return False
 
 async def process_account(p, account):
     stt_from, stt_to, dashboard_url = ACCOUNT_CONFIG[account]
@@ -139,50 +162,64 @@ async def process_account(p, account):
 
     if not username or not password:
         log(f"❌ Account {account}: Chưa có credentials!")
-        return False, []
+        return False, [], []
 
     log(f"\n{'='*40}")
     log(f"📋 Account {account} - STT {stt_from}-{stt_to}")
 
     keywords = fetch_keywords(stt_from, stt_to)
+    success_keys = []
+    failed_keys = []
 
-    for attempt in range(1, 4):
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        try:
-            if attempt > 1:
-                log(f"🔄 Account {account} - Thử lại lần {attempt}/3...")
-                await asyncio.sleep(10)
+    browser = await p.chromium.launch(headless=True)
+    page = await browser.new_page()
 
-            await page.goto(LOGIN_URL)
-            await page.wait_for_load_state("networkidle")
-            await page.click("text=Đăng nhập", timeout=60000)
-            await page.wait_for_timeout(2000)
+    try:
+        # Đăng nhập — retry tối đa 3 lần
+        logged_in = False
+        for attempt in range(1, 4):
+            try:
+                if attempt > 1:
+                    log(f"🔄 Account {account} - Retry đăng nhập lần {attempt}...")
+                    await asyncio.sleep(10)
 
-            await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", username)
-            await page.fill("#ctl00_ContentPlaceHolder1_txtPass", password)
-            await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
+                await page.goto(LOGIN_URL, timeout=90000)
+                await page.wait_for_timeout(3000)
+                await page.click("text=Đăng nhập", timeout=90000)
+                await page.wait_for_timeout(2000)
 
-            await page.goto(dashboard_url)
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
-            log(f"✅ Account {account} - Đã vào dashboard!")
+                await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", username)
+                await page.fill("#ctl00_ContentPlaceHolder1_txtPass", password)
+                await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
+                await page.wait_for_timeout(3000)
 
-            for j, kw in enumerate(keywords):
-                await update_one(page, j, kw)
+                log(f"✅ Account {account} - Đã đăng nhập!")
+                logged_in = True
+                break
+            except Exception as e:
+                log(f"⚠️ Account {account} đăng nhập lần {attempt}: {e}")
 
-            log(f"✅ Account {account} - Hoàn thành!")
-            return True, keywords
+        if not logged_in:
+            log(f"❌ Account {account} - Không thể đăng nhập!")
+            return False, [], keywords
 
-        except Exception as e:
-            log(f"⚠️ Account {account} lần {attempt}: {e}")
-        finally:
-            await browser.close()
+        # Cập nhật từng keyword — tiếp tục dù 1 keyword lỗi
+        for j, kw in enumerate(keywords):
+            ok = await update_one(page, dashboard_url, j, kw)
+            if ok:
+                success_keys.append(kw["key"])
+            else:
+                failed_keys.append(kw["key"])
 
-    log(f"❌ Account {account} thất bại sau 3 lần!")
-    return False, keywords
+        all_ok = len(failed_keys) == 0
+        log(f"{'✅' if all_ok else '⚠️'} Account {account} - Xong! {len(success_keys)}/5 thành công")
+        return all_ok, success_keys, failed_keys
+
+    except Exception as e:
+        log(f"❌ Account {account} lỗi nghiêm trọng: {e}")
+        return False, success_keys, failed_keys
+    finally:
+        await browser.close()
 
 async def run():
     accounts_str = os.environ.get("ACCOUNTS", "1")
@@ -192,12 +229,12 @@ async def run():
 
     async with async_playwright() as p:
         for acc in accounts:
-            success, keywords = await process_account(p, acc)
-            kw_summary = ", ".join([kw["key"] for kw in keywords]) if keywords else "-"
+            success, success_keys, failed_keys = await process_account(p, acc)
             results.append({
                 "account": f"Account {acc}",
                 "success": success,
-                "keywords": kw_summary
+                "keywords": ", ".join(success_keys) if success_keys else "-",
+                "failed_keys": ", ".join(failed_keys) if failed_keys else ""
             })
 
     send_summary_email(results)
