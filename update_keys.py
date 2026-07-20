@@ -139,10 +139,19 @@ async def update_one(page, dashboard_url, row_index, kw):
     log(f"🔗 URL: {kw['url']}")
 
     # Thời gian chờ random 25-115 giây
-    rand_time = random.randint(25, 45)
-    await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time))
+    rand_time1 = random.randint(25, 45)   # Click vào link
+    rand_time2 = random.randint(25, 120)  # Click ngẫu nhiên 1
+    rand_time3 = random.randint(25, 120)  # Click ngẫu nhiên 2
+    rand_time4 = random.randint(25, 120)  # Click ngẫu nhiên 3
+    await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time1))
     await page.wait_for_timeout(300)
-    log(f"⏱️ Thời gian chờ: {rand_time}s")
+    await page.fill("#ctl00_ContentPlaceHolder1_txtWait2", str(rand_time2))
+    await page.wait_for_timeout(300)
+    await page.fill("#ctl00_ContentPlaceHolder1_txtWait3", str(rand_time3))
+    await page.wait_for_timeout(300)
+    await page.fill("#ctl00_ContentPlaceHolder1_txtWait4", str(rand_time4))
+    await page.wait_for_timeout(300)
+    log(f"⏱️ Click link: {rand_time1}s | Ngẫu nhiên: {rand_time2}s, {rand_time3}s, {rand_time4}s")
 
     # Bấm Cập nhật Url
     await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl")
