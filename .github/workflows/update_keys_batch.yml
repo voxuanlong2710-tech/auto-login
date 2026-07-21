@@ -1,4 +1,4 @@
-name: 2Pink Update Keys (Batch 10)
+name: Update Keys (Batch 10)
 
 on:
   workflow_dispatch:
