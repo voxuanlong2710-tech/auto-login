@@ -1,4 +1,4 @@
-name: 2Pink Check Status
+name: Check Status
 
 on:
   workflow_dispatch:
