@@ -1,0 +1,66 @@
+name: 2Pink Check Status
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run script
+        env:
+          USERNAME_2PINK_1: ${{ secrets.USERNAME_2PINK_1 }}
+          PASSWORD_2PINK_1: ${{ secrets.PASSWORD_2PINK_1 }}
+          USERNAME_2PINK_2: ${{ secrets.USERNAME_2PINK_2 }}
+          PASSWORD_2PINK_2: ${{ secrets.PASSWORD_2PINK_2 }}
+          USERNAME_2PINK_3: ${{ secrets.USERNAME_2PINK_3 }}
+          PASSWORD_2PINK_3: ${{ secrets.PASSWORD_2PINK_3 }}
+          USERNAME_2PINK_4: ${{ secrets.USERNAME_2PINK_4 }}
+          PASSWORD_2PINK_4: ${{ secrets.PASSWORD_2PINK_4 }}
+          USERNAME_2PINK_5: ${{ secrets.USERNAME_2PINK_5 }}
+          PASSWORD_2PINK_5: ${{ secrets.PASSWORD_2PINK_5 }}
+          USERNAME_2PINK_6: ${{ secrets.USERNAME_2PINK_6 }}
+          PASSWORD_2PINK_6: ${{ secrets.PASSWORD_2PINK_6 }}
+          USERNAME_2PINK_7: ${{ secrets.USERNAME_2PINK_7 }}
+          PASSWORD_2PINK_7: ${{ secrets.PASSWORD_2PINK_7 }}
+          USERNAME_2PINK_8: ${{ secrets.USERNAME_2PINK_8 }}
+          PASSWORD_2PINK_8: ${{ secrets.PASSWORD_2PINK_8 }}
+          USERNAME_2PINK_9: ${{ secrets.USERNAME_2PINK_9 }}
+          PASSWORD_2PINK_9: ${{ secrets.PASSWORD_2PINK_9 }}
+          USERNAME_2PINK_10: ${{ secrets.USERNAME_2PINK_10 }}
+          PASSWORD_2PINK_10: ${{ secrets.PASSWORD_2PINK_10 }}
+          USERNAME_2PINK_11: ${{ secrets.USERNAME_2PINK_11 }}
+          PASSWORD_2PINK_11: ${{ secrets.PASSWORD_2PINK_11 }}
+          USERNAME_2PINK_12: ${{ secrets.USERNAME_2PINK_12 }}
+          PASSWORD_2PINK_12: ${{ secrets.PASSWORD_2PINK_12 }}
+          USERNAME_2PINK_13: ${{ secrets.USERNAME_2PINK_13 }}
+          PASSWORD_2PINK_13: ${{ secrets.PASSWORD_2PINK_13 }}
+          USERNAME_2PINK_14: ${{ secrets.USERNAME_2PINK_14 }}
+          PASSWORD_2PINK_14: ${{ secrets.PASSWORD_2PINK_14 }}
+          USERNAME_2PINK_15: ${{ secrets.USERNAME_2PINK_15 }}
+          PASSWORD_2PINK_15: ${{ secrets.PASSWORD_2PINK_15 }}
+          USERNAME_2PINK_16: ${{ secrets.USERNAME_2PINK_16 }}
+          PASSWORD_2PINK_16: ${{ secrets.PASSWORD_2PINK_16 }}
+          USERNAME_2PINK_17: ${{ secrets.USERNAME_2PINK_17 }}
+          PASSWORD_2PINK_17: ${{ secrets.PASSWORD_2PINK_17 }}
+          USERNAME_2PINK_18: ${{ secrets.USERNAME_2PINK_18 }}
+          PASSWORD_2PINK_18: ${{ secrets.PASSWORD_2PINK_18 }}
+          USERNAME_2PINK_19: ${{ secrets.USERNAME_2PINK_19 }}
+          PASSWORD_2PINK_19: ${{ secrets.PASSWORD_2PINK_19 }}
+          USERNAME_2PINK_20: ${{ secrets.USERNAME_2PINK_20 }}
+          PASSWORD_2PINK_20: ${{ secrets.PASSWORD_2PINK_20 }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python check_status.py
