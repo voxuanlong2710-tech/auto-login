@@ -1,4 +1,4 @@
-name: 2Pink Auto Active
+name: Auto Active
 
 on:
   workflow_dispatch:
