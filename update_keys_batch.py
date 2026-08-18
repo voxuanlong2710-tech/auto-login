@@ -209,7 +209,7 @@ async def process_account(p, account):
 
         if not logged_in:
             log(f"❌ Account {account} - Không thể đăng nhập!")
-            return False, [], keywords
+            return False, [], [kw["key"] for kw in keywords]
 
         # Cập nhật từng keyword — tiếp tục dù 1 keyword lỗi
         for j, kw in enumerate(keywords):
