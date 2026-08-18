@@ -1,4 +1,4 @@
-name: Update Schedule
+name: 2Pink Update Schedule
 
 on:
   workflow_dispatch:
@@ -17,4 +17,6 @@ jobs:
       - name: Run script
         env:
           CRONJOB_API_KEY: ${{ secrets.CRONJOB_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python update_schedule.py
