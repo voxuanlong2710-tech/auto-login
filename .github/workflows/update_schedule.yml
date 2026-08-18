@@ -1,4 +1,4 @@
-name: 2Pink Update Schedule
+name: Update Schedule
 
 on:
   workflow_dispatch:
