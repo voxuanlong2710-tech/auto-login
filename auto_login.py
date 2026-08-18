@@ -7,17 +7,39 @@ from datetime import datetime
 
 from playwright.async_api import async_playwright
 
-LOGIN_URL     = "https://2pink.org/"
-DASHBOARD_URL = "https://2pink.org/dashboard/live-traffic"
-USERNAME      = os.environ["USERNAME_2PINK"]
-PASSWORD      = os.environ["PASSWORD_2PINK"]
-ACTION        = os.environ.get("ACTION", "on")
-ACCOUNT       = os.environ.get("ACCOUNT", "?")
+LOGIN_URL = "https://2pink.org/"
+USERNAME  = os.environ["USERNAME_2PINK"]
+PASSWORD  = os.environ["PASSWORD_2PINK"]
+ACTION    = os.environ.get("ACTION", "on")
+ACCOUNT   = os.environ.get("ACCOUNT", "?")
 
-GMAIL_USER    = os.environ.get("GMAIL_USER", "")
-GMAIL_PASS    = os.environ.get("GMAIL_APP_PASSWORD", "")
+GMAIL_USER = os.environ.get("GMAIL_USER", "")
+GMAIL_PASS = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-MAX_RETRIES   = 3  # Số lần thử lại nếu thất bại
+MAX_RETRIES = 3
+
+DASHBOARD_URLS = {
+    "1":  "https://2pink.org/dashboard/live-traffic/ivivucom-262112",
+    "2":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-263440",
+    "3":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-269699",
+    "4":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-269704",
+    "5":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-269705",
+    "6":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-269707",
+    "7":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-270385",
+    "8":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-270386",
+    "9":  "https://2pink.org/dashboard/live-traffic/wwwivivucom-270767",
+    "10": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270768",
+    "11": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270766",
+    "12": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270769",
+    "13": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270955",
+    "14": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270956",
+    "15": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270958",
+    "16": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270959",
+    "17": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270960",
+    "18": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270962",
+    "19": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270964",
+    "20": "https://2pink.org/dashboard/live-traffic/wwwivivucom-270965",
+}
 
 logs = []
 
@@ -63,7 +85,8 @@ def send_email(success: bool):
         print(f"⚠️ Lỗi gửi email: {e}")
 
 async def attempt(p):
-    """1 lần thử đăng nhập và toggle"""
+    dashboard_url = DASHBOARD_URLS.get(ACCOUNT, "https://2pink.org/dashboard/live-traffic")
+
     browser = await p.chromium.launch(headless=True)
     page = await browser.new_page()
 
@@ -81,7 +104,7 @@ async def attempt(p):
         await page.wait_for_timeout(2000)
         log("✅ Đã đăng nhập!")
 
-        await page.goto(DASHBOARD_URL)
+        await page.goto(dashboard_url)
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(2000)
 
@@ -113,7 +136,7 @@ async def run():
             try:
                 if i > 1:
                     log(f"🔄 Thử lại lần {i}/{MAX_RETRIES}...")
-                    await asyncio.sleep(10)  # Chờ 10 giây trước khi thử lại
+                    await asyncio.sleep(10)
 
                 success = await attempt(p)
                 if success:
